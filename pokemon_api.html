@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pokémons</title>
+    <style>
+        html {
+        text-align: center;
+        }
+        .grid-fluid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        text-align: center;
+        }
+        .loader {
+        display: block;
+        margin: auto;
+        }
+        body{
+            background-color: #000;
+            color: white;
+        }
+        .links a{
+            font-size: 200%;
+        }
+    </style>
+</head>
+<body>
+    <h1>Pokémons</h1>
+    <nav class="links"></nav>
+    <main class="grid-fluid"></main>
+    <script>
+        //Variables para el DOM
+        const d = document,
+            $nav = d.querySelector(".links"),
+            $main = d.querySelector("main");
+            //Variable para la URL de la API
+            let urlAPI = "https://pokeapi.co/api/v2/pokemon/";
+        //Declaración de una variable asimcrona la cual obtendra nuestros pokémons de la API
+        //Nuestr función recibe la url de la API
+        async function loadPokemons(url){
+            //Si todo va bien se intenta esto
+            try {
+                /*Insertar en la etiqueta main la imagen del loader que se mostrara 
+                hasta que se inserten los pokémons.*/
+                $main.innerHTML= `<img class= "loader" src="./assets/loading.svg" alt="Cargando">`;
+                //Variable res -> recibe la respuesta de la url de la API en fetch
+                let res = await fetch(url),
+                //espera la respuesta y transforma la respuesta en archivos JSON
+                    json = await res.json(),
+                    //Variables para insertar las etiquetas en el DOM
+                    $templete="",
+                    //Variables para los botones de los enlaces de ANTERIOS << y SIGUIENTE >>
+                    $next="",
+                    $previos="";
+                //console.log(json);
+                //Ciclo para iterar todos los elementos que nos manda la API
+                for(let i=0; i<json.results.length;i++){
+                    //Caso de exito
+                    try {
+                        //console.log(json.results[i]);
+                        /*Se espera la respuesta de la url de cada elemento iterado, esto ira dentro
+                        de un nuevo fetch*/
+                        let res = await fetch(json.results[i].url),
+                        //Nueva variable para transformar la respuesta de cada elemento iterado a JSON
+                            pokemon= await res.json();
+                        //console.log(pokemon);
+                        //En caso de error esta linea redirecciona al CATCH
+                        if (!res.ok) throw {status:res.status, statusText:res.statusText}
+                        /*Por cada elemento iterado se extraran ciertas propiedades y se colocaran 
+                        en las etiquetas siguientes*/
+                        $templete +=`
+                        <figure>
+                            <img src="${pokemon.sprites.front_default}" alt="${pokemon.name}">
+                            <figcaption>${pokemon.name.toUpperCase()}</figcaption>
+                        </figure>
+                        `;
+                    //Caso de error
+                    } catch(error){
+                        let message = error.statusText||"Ocurrió un error";
+                        //En caso de error en alguno elementos iterados se insertara el siguiente error.
+                        $templete +=`
+                        <figure>
+                            <figcaption> Error ${error.status}: ${message}</figcaption>
+                        </figure>
+                        `;
+                    };
+                };
+                /*Se insertan en el main el templete con las etiquetas HTML
+                 con las propiedades de los elementos de la API (de cada pokémon)*/
+                $main.innerHTML = $templete;
+                //Porpiedad next de la API esta contiene el link de la siguiente pagina
+                //Si no esta vacia obtiene el link y sino no
+                $next = json.next ? `<a href="${json.next}">⏭️</a>`: "";
+                $previos = json.previous ? `<a href="${json.previous}">⏪</a>`: "";
+                //Inserta los botones en la etiqueta nav del html
+                $nav.innerHTML= $previos + "      " + $next;
+            //Caso de error
+            } catch (error) {
+                let message = error.statusText||"Ocurrio un error";
+                $main.innerHTML=`Error ${error.status}: ${message}`;
+            };
+        };
+        //Nuevo evento del DOM en donde el evento es nuestra función que recibe el link de la API
+        d.addEventListener("DOMContentLoaded",(e)=>loadPokemons(urlAPI));
+        //Evento click para los enlaces NEXT y PREVIOUS
+        d.addEventListener("click",(e)=>{
+            //Si hace click en el area correspondiente a la clase 
+            if (e.target.matches(".links a")){
+                e.preventDefault();
+                //Ejecuta la función de la url extraida de la etiqueta
+                loadPokemons(e.target.getAttribute("href"));
+            };
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Envio de Formulario / Fetch y PHP</title>
+    <style>
+       /***Reset***/
+
+        html{
+            box-sizing: border-box;
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 16px;
+            scroll-behavior: smooth;
+            background-color: #000;
+            color: white;
+        }
+
+        *,
+        *:before,
+        *:after{
+            box-sizing: inherit;
+        }
+
+        .contact-form {
+    --form-ok-color: #4caf50;
+    --form-error-color: #f44336;
+    margin-left: auto;
+    margin-right: auto;
+    width: 80%;
+}
+
+.contact-form > * {
+    padding: 0.5rem;
+    margin: 1rem auto;
+    display: block;
+    width: 100%;
+}
+
+.contact-form textarea {
+    resize: none;
+}
+
+.contact-form legend,
+.contact-form-response {
+    font-size: 1.5rem;
+    font-weight: bold;
+    text-align: center;
+}
+
+.contact-form input,
+.contact-form textarea {
+    font-size: 1rem;
+    font-family: sans-serif;
+}
+
+.contact-form input[type="submit"] {
+    width: 50%;
+    font-weight: bold;
+    cursor: pointer; /* Cuando el cursor se posiciona encima aparece la mano indicadora */
+}
+
+.contact-form *::placeholder {
+    color: #000;
+}
+
+.contact-form [required]:valid {
+    border: thin solid var(--form-ok-color);
+}
+
+.contact-form [required]:invalid {
+    border: thin solid var(--form-error-color);
+}
+
+.contact-form-error {
+    margin-top: -1rem;
+    font-size: 80%;
+    background-color: var(--form-error-color);
+    color: #fff;
+    transition: all 800ms ease;
+}
+.form-contac-loader{
+    text-align: center;
+}
+.reply-form{
+    text-align: center;
+}
+
+.contact-form-error.is-active {
+    display: block;
+    animation: show-message 1s 1 normal 0s ease-out both;
+}
+
+.none {
+    display: none;
+}
+
+@keyframes show-message {
+    0% {
+        visibility: hidden;
+        opacity: 0;
+    }
+
+    100% {
+        visibility: visible;
+        opacity: 1;
+    }
+}
+
+     
+    </style>
+</head>
+<body>
+    
+        <form class="contact-form">
+            <legend>Enviar</legend>
+            <input type="text" name="name" placeholder="Nombre" title="Solo se aceptan caracteres y espacios en blanco" pattern="^[A-Za-zÑñÁáÉéÍíÓóÚúÜü\s]+$" required>
+            <input type="email" name="email" placeholder="Escribe tu email" title="Email incorrecto"  required>
+            <input type="text" name="subject" placeholder="Asunto" title="Ingresa el asunto" required>
+            <textarea name="comments" cols="30" rows="5" placeholder="Comentarios" title="El comentario no debe exceder 250 caracteres" data-pattern="^.{1,255}$" required></textarea>
+            <input type="submit" value="Enviar" class="btn-sent">
+
+            <div class="form-contac-loader none">
+                <img src="../Ejercicios/assets/loading.svg" alt="Loading">
+            </div>
+            
+            <div class="reply-form none">
+                <p>
+                    Tus datos se enviarón correctamente.
+                </p>
+            </div>
+            
+        </form>
+        <script>
+            const d = document;
+
+            function contactForm() {
+                const $form = d.querySelector(".contact-form"),
+                    $inputs = d.querySelectorAll(".contact-form [required]");
+
+                // console.log($inputs);
+
+                $inputs.forEach((input) => {
+                    const $span = d.createElement("span");
+                    $span.id = input.name;
+                    $span.textContent = input.title;
+                    $span.classList.add("contact-form-error", "none");
+                    input.insertAdjacentElement("afterend", $span);
+
+                });
+
+                //Mostrar efectos de secciones invalidas
+                d.addEventListener("keyup",(e)=>{
+
+                    if (e.target.matches(".contact-form [required]")){
+
+                        const $input =  e.target,
+                        pattern = $input.pattern || $input.dataset.pattern;
+
+                        if(pattern && $input.pattern || $input.dataset.pattern){
+                            //Contruir la Expresión regular para validación 
+                            const regEx= new RegExp(pattern);
+                            return !regEx.exec($input.value)
+                                ? d.getElementById($input.name).classList.add("is-active")
+                                : d.getElementById($input.name).classList.remove("is-active");
+                        };
+
+                        if (!pattern){
+                            return $input.value === ""
+                            ? d.getElementById($input.name).classList.add("is-active")
+                            : d.getElementById($input.name).classList.remove("is-active");
+                        };
+                    };
+                    
+
+                });
+
+
+                // Eventos de carga y emisión de respuesta por parte del dormulario
+                d.addEventListener("submit", (e) => {
+                    e.preventDefault();
+                    const $loading = d.querySelector(".form-contac-loader"),
+                            $reply = d.querySelector(".reply-form");
+                    fetch("php/send-forms.php",{
+                        method:"POST",
+                        body: new FormData(e.target),
+                        mode:"cors"
+
+                    })
+                    .then(res=> res.ok ? res.json : Promise.reject(res))
+                    .then(json=> {
+                        console.log(json);
+                        $loading.classList.remove("none");
+                        $reply.classList.remove("none");
+                        $reply.innerHTML= `<p>${json.message||"Enviado correctamente."} </p>`;
+                        $form.reset();
+                        
+                    })
+                    .catch(error=>{
+                        console.error(error)
+                        let message = error.statusText||"Ocurrio un error";
+                        $reply.innerHTML = `<p>Error ${error.status}: ${message}</p>`
+                    })
+                    .finally(()=>{
+                        setTimeout(()=>{
+                            $loading.classList.add("none");
+                            $reply.classList.add("none");
+                            $reply.innerHTML="";
+                        },1500)
+                    });
+                    //Declaración de las respuesta de enviado y loading...
+                    //alert("Enviando formulario");
+                    
+                    //Se remueve la clase none que es la que oculta los elementos
+                    
+                    //SetTimeout para que se ejecute cada cierto tiempo
+                    /*setTimeout(()=>{
+                        //Se quitan y se agregam las clases según queremos lo que se muestre 
+                        $loading.classList.add("none");
+                        $reply.classList.remove("none");
+                        //setTimeout interno para volver a ocultar la respuesta dado un cierto tiempo
+                        setTimeout(()=>{
+                            $reply.classList.add("none");
+                        },1500);
+
+                    },2000);*/
+                    
+                });
+            };
+        
+        d.addEventListener("DOMContentLoaded",contactForm);
+        </script>
+  
+</body>
+</html>

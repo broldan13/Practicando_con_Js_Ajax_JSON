@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Uploader-drag-and-drop / AJAX</title>
+    <style>
+         html {
+      box-sizing: border-box;
+      font-family: sans-serif;
+      font-size: 16px;
+    }
+
+    *,
+    *:before,
+    *:after {
+      box-sizing: inherit;
+    }
+
+    body {
+      margin: 0;
+    }
+
+    main {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      min-height: 100vh;
+    }
+
+    progress {
+      margin-top: 1rem;
+    }
+
+    .drop-zone {
+      margin-left: auto;
+      margin-right: auto;
+      border: thin dotted #000;
+      width: 80%;
+      height: 40vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+    }
+
+    .drop-zone.is-active {
+      border: thick dashed #000;
+      background-color: rgba(0, 128, 0, .5);
+      animation: pulse 1.5s infinite;
+      animation-timing-function: linear;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        transform: scale(1);
+      }
+
+      50% {
+        transform: scale(1.1);
+      }
+    }
+      </style>
+</head>
+<body>
+    <main>
+        <article class="drop-zone">
+            <p>Arrastra y suelta los archivos ... </p>
+        </article>
+        
+    </main>
+    <script>
+        //Varible para el document
+        const d = document,
+        //Variable para el DOM 
+            //Se obtiene según su tipo de etiqueta
+            $main = d.querySelector("main"),
+            //Se obtiene según su ID
+            $dropZone = d.querySelector(".drop-zone");
+        //Función para conectar con el PHP y hacer el guardado correspondiente
+        const uploader = (file) =>{
+            //console.log(file);
+            //Nuevo objeto XHR
+            const xhr = new XMLHttpRequest();
+            //Nuevo Objeto formData para crear el archivo 
+            let formData = new FormData();
+            formData.append("file",file);
+            //Nuevo evento de readyStanteChange para las validaciones correspondiente
+            xhr.addEventListener("readystatechange",e => {
+                // Si es diferente del estado 4 entonces se regresa
+                if (xhr.readyState !== 4) return;
+                //Validación de codigos de exito
+                if (xhr.status >= 200 && xhr.status <300){
+                    //Obtención de la respuesta segun el objeto XHR y transformación a archivo JSON
+                    let json = JSON.parse(xhr.responseText);
+                    //console.log(json);
+                }else{
+                    //Caso de error
+                    let message = xhr.statusText || "Ocurrio un error";
+                    console.error(`Error ${xhr.status}:${message}`);
+                };
+            });
+            //Metodo open del objeto XHR para seleccionar el tipo de creación y la url a ejecutar(crear en este caso(POST)).
+            xhr.open("POST","php/uploader.php");
+            //Busqueda de cabeceras
+            xhr.setRequestHeader("enc-type","multipart/form-data");
+            //Se envian los archivos con nombre colocado en el append de formData
+            xhr.send(formData);
+        };
+        //Dunción para creación de la barra de progreso 
+        const theProgress = (file) => {
+            // Variable para creación de nuevo elemento de tipo <progress></progress>
+            const $progress = d.createElement("progress"),
+            //Variable para creación de nuevo elemento de tipo <span></span>
+                $span = d.createElement("span");
+            //Se declara el Valor inicial y el valor maximo del elemento de progresso del DOM
+            $progress.value = 0;
+            $progress.max = 100;
+            //Inserción de los elementos en el cuerpo del main
+            $main.insertAdjacentElement("beforeend",$progress);
+            $main.insertAdjacentElement("beforeend", $span);
+            //Nuevo objeto para leer el progreso de la carga de archivos
+            const fileReader = new FileReader();
+            //Archivo a leer (file)
+            fileReader.readAsDataURL(file);
+            //Nuevo evento del FileReader de tipo progress para realizar los calculos de archivos
+            fileReader.addEventListener("progress", (e) => {
+                //parseInt para redondear la carga del metodo loaded del evento por 100 / el total
+                 let progress = parseInt((e.loaded * 100)/e.total);
+                 //Se le ira asignando el calculo anterior a la variable del elemento progress
+                 $progress.value = progress;
+                 // Se insertara a la etiqueta span el nombre del archivo y su respectivo progreso
+                 $span.innerHTML = `<b>${file.name} ...${progress} %</b>`;
+            });
+            //Nuevo evento de carga del objeto FileReader
+            fileReader.addEventListener("loadend",(e)=>{
+                //Se agrega la función de carga donde se manda a llamar la función del php
+                uploader(file);
+                //Despues de 3 segundos se remueven los elementos previamente insertados en el main
+                setTimeout(()=>{
+                    $main.removeChild($progress);
+                    $main.removeChild($span);
+                },3000);
+            });
+        };
+        //Nuevo evento de tipo dropZone para arraastera elementos al area de trabajo
+        $dropZone.addEventListener("dragover",(e)=>{
+            //console.log(e);
+            //Se previene su comportamiento del evento
+            e.preventDefault();
+            //Se detiene la propagación del evento
+            e.stopPropagation();
+            //Se agrega la clase is-active para activar los estilos y efectos correspondientes
+            $dropZone.classList.add("is-active");
+        });
+        //Nuevo evento de tipo dropZone para agregar el efecto solo estando dentro del area definida
+        $dropZone.addEventListener("dragleave",(e)=>{
+            //Se previene su comportamiento del evento
+            e.preventDefault();
+            //Se detiene la propagación del evento
+            e.stopPropagation();
+            //Se remueve la clase is-active para quitar los estilos y efectos previos una vez arrastrado
+            $dropZone.classList.remove("is-active");
+        });
+        //Nuevo evento drop para poder colocar los archivos en el area asignada
+        $dropZone.addEventListener("drop",(e)=>{
+            //console.log(e);
+            //Se previene su comportamiento del evento
+            e.preventDefault();
+            //Se detiene la propagación del evento
+            e.stopPropagation();
+            // Por cada archivo se agregara la función que hace que se muestre el progreso
+            let files = Array.from(e.dataTransfer.files);
+            files.forEach(el => theProgress(el));
+            //Una vez colocado el progreso se remueve la clase que produce el efecto
+            $dropZone.classList.remove("is-active");
+        });
+    </script>
+</body>
+</html>

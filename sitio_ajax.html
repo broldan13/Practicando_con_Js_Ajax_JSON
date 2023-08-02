@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sitio AJAX</title>
+    <link rel="stylesheet" href="/ejercicios_ajax/css/style-sitio.css">
+</head>
+<body>
+    <header class="header">
+        <section class="header-content container">
+            <article class="logo">
+                <img src="https://www.pngmart.com/files/3/Naruto-Pain-PNG-Picture.png" alt="pain">
+            </article>
+            <nav class="menu">
+                <a href="/ejercicios_ajax/assets/home.html">Home</a>
+                <a href="/ejercicios_ajax/assets/history.html">History</a>
+                <a href="/ejercicios_ajax/assets/acerca.html">Acerca de</a>
+                <a href="/ejercicios_ajax/assets/contacto.html">Contacto</a>
+            </nav>
+        </section>
+        
+    </header>
+    <main class="container"></main>
+    <footer class="footer container">
+        <small>Creado por ZoBrian</small>
+    </footer>
+
+    <script>
+        //Variable para el document
+        const d = document,
+        //Variable main donde se insertaran las paginas
+            $main = d.querySelector("main");
+        //Función para realizar el proceso que recibe un objeto con las opciones
+        //ESTRUCTURA DE LO QUE HACE LA FUNCIÓN
+        const getPages = (options)=>{
+            //Se declara el objeto y sus metodos
+            let {url,sucess,err} = options;
+            //Nueva variable para obtener el ajax de tipo XHR
+            const xhr = new XMLHttpRequest();
+            //Nuevo evento del xhr
+            xhr.addEventListener("readystatechange", e =>{
+                //Solo nos importa que el estado sea igual a 4 sino nos retorna
+                if(xhr.readyState !== 4) return;
+                //Coigos de exito 
+                if( xhr.status >= 200 && xhr.status <300){
+                    //Variable para obtener la respuesta
+                    let reply = xhr.responseText;
+                    //La respuesta es recibida por la funci+on de exito 
+                    sucess(reply);
+
+                //Caso de error
+                }else{
+                    //Mensaje de inserción en caso de error
+                    let message = xhr.statusText || "Ocurrio un error";
+                    err(`Error ${xhr.status}:${message}`);
+                };
+            });
+            //Metodos de obtención del XHR / GET y la URL de donde los obtendra
+            xhr.open("GET",url);
+            //Metodo para obtener las cabeceras
+            xhr.setRequestHeader("Content-type","text/html; charset=utf-8");
+            //Metodo de envio- en este caso no se envia nada
+            xhr.send();
+        };
+        //Nuevo evento del document para nueba carga del DOM
+        d.addEventListener("DOMContentLoaded",e=>{
+            //Función previamente estructurada con los valores correspondientes según el objeto
+            getPages({
+                //URL de la pagina con el contenido que cargara
+                url:"/ejercicios_ajax/assets/home.html",
+                //Función de exito -/ Recibe la respuesta (HTML) y lo inserta en el cuerpo del main
+                sucess:(reply)=> $main.innerHTML=reply,
+                //Función en caso de error que recibe el error(Mensaje previamente estructurado en la función) y lo inserta en el main
+                err: (err)=>$main.innerHTML= `<h2>${err}</h2>`
+            });
+        });
+        //Nuevo evento del document de tipo click
+        d.addEventListener("click",e=>{
+            /*En el html principal en la parte de los enlaces donde colocamos
+             la clase (Menu de navegación (nav .menu)) si hacemos click en esos enlaces*/
+            if (e.target.matches(".menu a")){
+                //Cancelamos el evento predeterminado para que no nos cambie a la pagina
+                e.preventDefault();
+                //Colocamos la función con la estructura ´reviamente elaborada y agregamos nuevos valores según los requeramos para su fin
+                getPages({
+                    //Url en caso de hacer click a cualquier enlace// Ese seria el html que se insertaria
+                    url: e.target.href,
+                    //Carga la respuesta a la función en caso de exito e inserta el html correspondiente
+                    sucess:(reply)=> $main.innerHTML=reply,
+                    //Caso de error
+                    err: (err)=>$main.innerHTML= `<h2>${err}</h2>`
+                });
+ 
+            }
+        });
+
+    </script>
+</body>
+</html>

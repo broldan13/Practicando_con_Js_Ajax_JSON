@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blog ZoBrianReg</title>
+    <style>
+        header{
+            background-color: gray;
+            padding-top: 1rem;
+            margin-top: -1rem;
+            width: 100%;
+            text-align: right;
+        }
+        .logo{
+            text-align: left;
+            padding-left: 0.5rem;
+        }
+        .logo img{
+            height: 3rem;
+            width: auto;
+            padding: 0;
+        }
+        .menu a{
+            padding: 2rem;
+            font-family: cursive;
+            font-weight: bold;
+            color: white;
+
+        }
+    </style>
+</head>
+<header class="header">
+    <section class="header-content container">
+        <article class="logo">
+            <img src="https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/7bd56f40-2ce3-4ebb-821b-dbc22456cb3e/dfxloa1-e08b66ad-0e53-4e89-8a2b-526944933dec.png?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7InBhdGgiOiJcL2ZcLzdiZDU2ZjQwLTJjZTMtNGViYi04MjFiLWRiYzIyNDU2Y2IzZVwvZGZ4bG9hMS1lMDhiNjZhZC0wZTUzLTRlODktOGEyYi01MjY5NDQ5MzNkZWMucG5nIn1dXSwiYXVkIjpbInVybjpzZXJ2aWNlOmZpbGUuZG93bmxvYWQiXX0.fGT4BwGCedzA4A2L-icV8Bq0JEbkbFBZKCe7LeBP95U" alt="pain">
+        </article>
+        <nav class="menu">
+            <a href="">Blog</a>
+            <a href="">History</a>
+            <a href="">Acerca de</a>
+            <a href="">Contacto</a>
+        </nav>
+    </section>
+    
+</header>
+<body>
+    <main>
+
+    </main>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/2.1.0/showdown.min.js"></script>
+    <script>
+        const d = document,
+            $main= d.querySelector("main");
+        
+        fetch("./markdown/blog.md").then((res)=> res.ok ? res.text() : Promise.reject(res))
+        .then((text)=>{
+            console.log(text);
+            $main.innerHTML = new showdown.Converter().makeHtml(text);
+        }).catch();
+    </script>
+</body>
+</html>

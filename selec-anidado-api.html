@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estados / Municipios</title>
+</head>
+<body>
+    <h1>Estados y Municipios</h1>
+    <h2>México</h2>
+    <label for="select primery">Estados</label>
+    <select name="primary" id="select-primary">
+        <option value="">Elije un estado</option>
+    </select>
+    <p></p>
+    <label for="select secundary">Municipios</label>
+    <select name="secundary" id="select-secundary">
+        <option value="">Elije un municipio</option>
+    </select>
+    <p></p>
+    <label for="select coloni">Colonia</label>
+    <select name="coloni" id="select-coloni">
+        <option value="">Elije un Colonia</option>
+    </select>
+    <p></p>
+    <script>
+        const d = document,
+            $states= d.getElementById("select-primary"),
+            $mayors = d.getElementById("select-secundary"),
+            $coloni = d.getElementById("select-coloni");
+        
+        function loadSates(){
+            fetch("https://api.copomex.com/query/get_estados?token=pruebas")
+                .then(res=> res.ok ? res.json() : Promise.reject(res))
+                .then(json=>{
+                    //console.log(json);
+                    let $options = `<option value="">Elije un estado</option>`;
+                    json.response.estado.forEach(el=>$options+= `<option value="${el}"> ${el}</option>`);
+
+                    $states.innerHTML=$options;
+                })
+                .catch(err=>{
+                    let message = err.statusText||"Ocurrio un error";
+                    $states.nextElementSibling.innerHTML=`Error ${err.status}: ${message}`;
+                });
+        };
+
+        function loadMayors(state){
+            fetch(`https://api.copomex.com/query/get_municipio_por_estado/${state}?token=pruebas`)
+                .then(res=> res.ok ? res.json() : Promise.reject(res))
+                .then(json=>{
+                    //console.log(json);
+                    let $options = `<option value="">Elije un municipio</option>`;
+                    json.response.municipios.forEach(el=> $options +=`<option value="${el}"> ${el}</option>`);
+
+                    $mayors.innerHTML=$options;
+                })
+                .catch();
+        };
+
+        function loadColoni(mayor){
+            fetch(`https://api.copomex.com/query/get_colonia_por_municipio/${mayor}?token=pruebas`)
+                .then(res=> res.ok ? res.json() : Promise.reject(res))
+                .then(json=>{
+                    console.log(json);
+                    let $options = `<option value="">Elije una colonia</option>`;
+                    json.response.colonia.forEach(el=> $options += `<option value="${el}"> ${el}</option>`);
+
+                    $coloni.innerHTML=$options;
+
+                })
+                .catch();
+        }
+        d.addEventListener("DOMContentLoaded",loadSates);
+        $states.addEventListener("change",e=>loadMayors(e.target.value));
+        $mayors.addEventListener("change",e=>loadColoni(e.target.value));
+    </script>
+</body>
+</html>

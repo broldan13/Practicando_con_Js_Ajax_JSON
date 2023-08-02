@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buscador de canciones</title>
+    <style>
+        html {
+            font-family: sans-serif;
+        }
+
+        img {
+            max-width: 100%;
+            height: auto;
+            }
+
+        main {
+            display: flex;
+            flex-direction: column-reverse;
+            }
+
+        .loader {
+            display: none;
+            margin: auto;
+            }
+
+        .song blockquote {
+            white-space: pre-wrap;
+            }
+
+        @media screen and (min-width: 800px) {
+            main {
+                flex-direction: row;
+        }
+        main>* {
+            padding: 1rem;
+            flex-basis: 50%;
+            text-align: justify;
+        }
+        }
+        body{
+            background-color: black;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <h1>Buscador de canciones</h1>
+    <form id="song-search">
+        <input type="search" name="artist" placeholder="Interprete..." required>
+        <br><br>
+        <input type="submit">
+    </form>
+    <img  class="loader" src="./assets/loading.svg" alt="Cargango...">
+    <aside class="error"></aside>
+    <main>
+        <article class="artist">
+            <h2>Información del Artista</h2>
+        </article>
+    </main>
+
+    <script>
+        const d = document,
+            $form = d.getElementById("song-search"),
+            $loader = d.querySelector(".loader"),
+            $error = d.querySelector(".error"),
+            $main = d.querySelector("main"),
+            $artist = d.querySelector(".artist");
+        
+        $form.addEventListener("submit", async e =>{
+            e.preventDefault();
+            
+            try {
+                $loader.style.display="block";
+
+                let $templeteArtist="";
+                
+                let artist = e.target.artist.value.toLowerCase();
+                let artistAPI = `https://theaudiodb.com/api/v1/json/2/search.php?s=${artist}`;
+                let artistFetch = fetch(artistAPI);
+                let artRes = await artistFetch;
+                let artData = await artRes.json();
+                
+                console.log(artData)
+                
+                if (artData.artists===null){
+                    $templeteArtist.innerHTML=`<h2>No se encontrarón resultados de ${artist} </h2>`;
+                }else{
+                    $error.innerHTML=``;
+                    let artist = artData.artists[0];
+                    //console.log(artist);
+                    $templeteArtist=`
+                    <h2>${artist.strArtist}</h2>
+                    <img src="${artist.strArtistThumb}" alt="${artist.strArtist}">
+                    <br><br>
+                    <small>${artist.intBornYear} - ${artist.intDiedYear||"Presente"}, ${artist.strCountry} </small>
+                    <br>
+                    <small>${artist.strGenre} </small>
+                    <h3>Biografia</h3>
+                    <p>${artist.strBiographyES || "Biografia no encontrada"} </p>
+                    `;
+                }
+                e.target.artist.value="";
+                $artist.innerHTML=$templeteArtist;
+                $loader.style.display="none";
+                
+            } catch(err) {
+                console.log(err);
+                $artist.innerHTML="";
+                let message = err.statusText||"Ocurrió un error";
+                $error.innerHTML = `<p>Error ${err.status}: ${message} </p>`;
+                $loader.style.display="none";
+            }
+        });
+    </script>
+</body>
+</html>
